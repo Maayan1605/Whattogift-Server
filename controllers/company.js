@@ -1,12 +1,13 @@
 import express from "express";
 import mongoose from 'mongoose';
+import { getDistance } from 'geolib';
 import Company from "../models/company.js";
 const router = express.Router();
 import Auth from './auth.js';
 
-router.post('/createCompany', Auth, async(request, response) => {
+router.post('/create_company', Auth, async(request, response) => {
     const user = request.user;
-    const company = await Company.find({associateId: user._id});
+    const company = await Company.find({associateId: user.associateId});
     if (company.length > 0) {
         return response.status(200).json({ 
             status: false,
@@ -18,7 +19,7 @@ router.post('/createCompany', Auth, async(request, response) => {
         const { companyName, contact } = request.body;
         const newCompany = new Company({
             _id: id,
-            associateId: user._id,
+            associateId: user.associateId,
             companyName: companyName,
             contact: contact,
             bio: ''
@@ -31,7 +32,7 @@ router.post('/createCompany', Auth, async(request, response) => {
             });
         })
         .catch(error => {
-            return response.status(200).json({ 
+            return response.status(500).json({ 
                 status: false,
                 message: error.message
              });
@@ -39,8 +40,49 @@ router.post('/createCompany', Auth, async(request, response) => {
     }
 });
 
-router.put('/updateCompany', Auth, async(request, response) => {
+router.put('/update_company', Auth, async(request, response) => {
+    //TODO 
+});
 
+
+router.get('/get_company', Auth, async(request, response) => {
+    //TODO
+});
+
+/**
+* @swagger
+* /api/company/get_companies:
+*    get:
+*       summary: Returns list of all categories
+*       tags: [Company]
+*       responses:
+*           200:
+*               description: This is the list of all brands
+*               content: 
+*                   application/json:
+*                       schema:
+*                        type: array
+*/
+router.post('/get_companies', Auth, async(request, response) => {
+    const {longitude, latitude} = request.body;
+    Company.find()
+    .then(companies => {
+        let companies_with_distance = companies.map(company => {
+            let distance = getDistance(
+                {longitude: longitude, latitude: latitude}, 
+                {longitude: company.contact.longitude, latitude: company.contact.latitute});
+            company.distance = distance;
+            return company;
+        })
+        return response.status(200).json({
+            message: companies_with_distance
+        })
+    })
+    .catch(error => {
+        return response.status(500).json({
+            message: error.message
+        })
+    })
 });
 
 export default router;

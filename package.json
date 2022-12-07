@@ -1,7 +1,7 @@
 {
-  "name": "whattogift-server",
+  "name": "whatogift-server",
   "version": "1.0.0",
-  "description": "What to gift server API",
+  "description": "What to gift server api",
   "main": "index.js",
   "type": "module",
   "scripts": {
@@ -10,12 +10,26 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Maayan1605/Whattogift-Server.git"
+    "url": "git+https://github.com/eliqwamo/Whatogift-Server.git"
   },
-  "author": "Maayan Elbaz",
+  "author": "Elihu Chitrit",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/Maayan1605/Whattogift-Server/issues"
+    "url": "https://github.com/eliqwamo/Whatogift-Server/issues"
   },
-  "homepage": "https://github.com/Maayan1605/Whattogift-Server#readme"
+  "homepage": "https://github.com/eliqwamo/Whatogift-Server#readme",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.20.1",
+    "express": "^4.18.2",
+    "geolib": "^3.3.3",
+    "jsonwebtoken": "^8.5.1",
+    "moment": "^2.29.4",
+    "mongoose": "^6.7.0",
+    "swagger-jsdoc": "^6.0.0",
+    "swagger-ui-express": "^4.6.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.20"
+  }
 }

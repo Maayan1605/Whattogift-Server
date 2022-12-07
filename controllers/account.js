@@ -9,6 +9,66 @@ const router = express.Router();
 import Account from '../models/account.js';
 
 // routes
+
+/**
+ * @swagger
+ * definitions:
+ *  Login:
+ *      type: object
+ *      properties:
+ *          email:
+ *              type: string
+ *              example: example@gmail.com
+ *          password:
+ *              type: string
+ *              example: password
+ *  Signup:
+ *      type: object
+ *      properties:
+ *          firstName:
+ *              type: string
+ *              example: Fname
+ *          lastName:
+ *              type: string
+ *              example: Lname
+ *          email:
+ *              type: string
+ *              example: example@gmail.com
+ *          password:
+ *              type: string
+ *              example: password
+ *  Verify:
+ *      type: object
+ *      properties:
+ *          email:
+ *              type: string
+ *              example: example@gmail.com
+ *          password:
+ *              type: string
+ *              example: password
+ *          passcode:
+ *              type: int
+ *              example: 1234
+ */
+
+/**
+ * @swagger
+ * /api/account/signup:
+ *  post:
+ *      summary: Create new account
+ *      tags: [Account]
+ *      description: Use this endpoint to create a new account
+ *      requestBody:
+ *          content:
+ *              application/json:
+ *                  schema:
+ *                      $ref: '#/definitions/Signup'
+ *      responses:
+ *          200:
+ *              discription: Success 
+ *          500:
+ *              discription: Error 
+ */
 router.post('/signup', async(request, response) => {
     // Get user register data
     const id = mongoose.Types.ObjectId();
@@ -26,6 +86,7 @@ router.post('/signup', async(request, response) => {
         const hashPassword = await bcryptjs.hash(password, 10);
         Account.create({
             _id: id,
+            associateId: id,
             firstName: firstName,
             lastName: lastName,
             email: email,
@@ -53,6 +114,24 @@ router.post('/signup', async(request, response) => {
     })
 });
 
+/**
+ * @swagger
+ * /api/account/verify:
+ *  post:
+ *      summary: Verify
+ *      tags: [Account]
+ *      description: Use this endpoint to verify a created account
+ *      requestBody:
+ *          content:
+ *              application/json:
+ *                  schema:
+ *                      $ref: '#/definitions/Verify'
+ *      responses:
+ *          200:
+ *              discription: Success 
+ *          500:
+ *              discription: Error 
+ */
 router.post('/verify', async(request, response) => {
     // Get user register data
     const { email, password, passcode } = request.body;
@@ -100,6 +179,24 @@ router.post('/verify', async(request, response) => {
     })
 });
 
+/**
+ * @swagger
+ * /api/account/login:
+ *  post:
+ *      summary: Login
+ *      tags: [Account]
+ *      description: Use this endpoint to log into your account account
+ *      requestBody:
+ *          content:
+ *              application/json:
+ *                  schema:
+ *                      $ref: '#/definitions/Login'
+ *      responses:
+ *          200:
+ *              discription: Success 
+ *          500:
+ *              discription: Error 
+ */
 router.post('/login', async(request, response) => {
     // Get user register data
     const { email, password } = request.body;

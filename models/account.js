@@ -4,6 +4,7 @@ const Schema = mongoose.Schema;
 
 const accountSchema = new Schema({
     _id: mongoose.Schema.Types.ObjectId,
+    associateId: { type: mongoose.Schema.Types.ObjectId, ref: 'Account' },
     email: { type: String, required: true },
     password: { type: String, required: true },
     createdAt: {type: Date, default: Date.now },
