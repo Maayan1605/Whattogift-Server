@@ -63,7 +63,23 @@ router.get('/get_company', Auth, async(request, response) => {
 *                       schema:
 *                        type: array
 */
-router.post('/get_companies', Auth, async(request, response) => {
+router.get('/get_companies', Auth, async(request, response) => {
+    const {longitude, latitude} = request.body;
+    Company.find()
+    .then(companies => {
+        return response.status(200).json({
+            message: companies
+        })
+    })
+    .catch(error => {
+        return response.status(500).json({
+            message: error.message
+        })
+    })
+});
+
+
+router.post('/get_companies_with_distance', Auth, async(request, response) => {
     const {longitude, latitude} = request.body;
     Company.find()
     .then(companies => {
