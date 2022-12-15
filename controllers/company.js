@@ -4,6 +4,7 @@ import { getDistance } from 'geolib';
 import Company from "../models/company.js";
 const router = express.Router();
 import Auth from './auth.js';
+import company from "../models/company.js";
 
 router.post('/create_company', Auth, async(request, response) => {
     const user = request.user;
@@ -87,8 +88,10 @@ router.post('/get_companies_with_distance', Auth, async(request, response) => {
             let distance = getDistance(
                 {longitude: longitude, latitude: latitude}, 
                 {longitude: company.contact.longitude, latitude: company.contact.latitute});
-            company.distance = distance;
-            return company;
+            let companyWithDistance = JSON.parse(JSON.stringify(company));
+            companyWithDistance.distance = distance;
+            console.log(companyWithDistance);
+            return companyWithDistance;
         })
         return response.status(200).json({
             message: companies_with_distance
