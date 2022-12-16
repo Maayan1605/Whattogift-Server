@@ -5,7 +5,7 @@ const Schema = mongoose.Schema;
 const productSchema = new Schema({
     _id: mongoose.Schema.Types.ObjectId,
     companyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Company' },
-    categoryId: { type: mongoose.Schema.Types.ObjectId, ref: 'Category' },
+    categoriesId: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Category' }],
     brandId: { type: mongoose.Schema.Types.ObjectId, ref: 'Brand' },
     productName: { type: String, required: true },
     productImages: [
@@ -14,6 +14,10 @@ const productSchema = new Schema({
     productPrice: Number,
     productDescription: String,
     unitInStock: Number,
+    gender: String,
+    related: Number,
+    minAge: Number,
+    maxAge: Number,
     reviews: [
         {
             associateId: { type: mongoose.Schema.Types.ObjectId, ref: 'Account' },

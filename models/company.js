@@ -12,7 +12,7 @@ const companySchema = new Schema({
         state: String,
         zipcode: String,
         mobile: String,
-        latitute: String,
+        latitude: String,
         longitude: String
     },
     logo: {type: String, default: 'https://cdn.logo.com/hotlink-ok/logo-social.png'},

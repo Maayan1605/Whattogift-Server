@@ -238,12 +238,12 @@ router.post('/login', async(request, response) => {
 
 //to do:
 //Update account
-router.put('/updateAccount', async(request, response) => {});// update fname, lname, dob, gender, contact.
+router.put('/update_account', async(request, response) => {});// update fname, lname, dob, gender, contact.
 
 //Update password
-router.put('/updatePassword', async(request, response) => {});
+router.put('/update_password', async(request, response) => {});
 
-router.get('/getOverview', auth, async(request, response) => {
+router.get('/get_overview', auth, async(request, response) => {
     return response.status(200).json({
         status: true,
         message: `Hello ${request.user.firstName} ${request.user.lastName}`
