@@ -144,91 +144,98 @@ router.post('/create_product', Auth, async(request, response) => {
         productName,productPrice,productDescription,
         unitInStock, productImage, minAge, maxAge, related, gender
     } = request.body;
-    Product.create({
-        _id: id,
-        companyId: companyId,
-        categoriesId: categoriesId,
-        brandId: brandId,
-        productName: productName,
-        productDescription: productDescription,
-        productImages: [productImage],
-        productPrice: productPrice,
-        unitInStock: unitInStock,
-        minAge: minAge,
-        maxAge: maxAge,
-        gender: gender,
-        related: related,
-        reviews: []
+    Product.findOne({productName: productName, companyId: companyId, brandId: brandId})
+    .then(product => {
+        if (product) {
+            return response.status(200).json({
+                message: 'Product with the same name from the same company and brand is already existed.'
+            })
+        }
+        Product.create({
+            _id: id,
+            companyId: companyId,
+            categoriesId: categoriesId,
+            brandId: brandId,
+            productName: productName,
+            productDescription: productDescription,
+            productImages: [productImage],
+            productPrice: productPrice,
+            unitInStock: unitInStock,
+            minAge: minAge,
+            maxAge: maxAge,
+            gender: gender,
+            related: related,
+            reviews: []
+        })
+        .then(createdProduct => response.status(200).json({
+            message: createdProduct
+        }))
     })
-    .then(createdProduct => response.status(200).json({
-        message: createdProduct
-    }))
     .catch(error => response.status(500).json({
         message: error.message
     }));
 })
 
-function getProductWithMatchingValue(product, gender, related, events, interests, age, price, latitude, longitude, distance) {
+async function getProductWithMatchingValue(product, gender, related, eventId, interests, age, minPrice, maxPrice, latitude, longitude, distance) {
     let matchingFields = 0;
     if (product.gender == gender)
         matchingFields++;
     if (related != null && product.related == related)
         matchingFields++;
-    if (product.categoriesId.find(categoryId => events.includes(categoryId)) != undefined)
+    if (product.categoriesId.find(categoryId => categoryId.equals(eventId))) 
         matchingFields++;
-    if (product.categoriesId.find(categoryId => interests.includes(categoryId)) != undefined)
+    if (product.categoriesId.find(categoryId => interests.find(interestId => categoryId.equals(interestId)))) 
         matchingFields++;
     if (product.minAge <= age && product.maxAge >= age)
         matchingFields++;
-    if (price != null && product.productPrice <= price)
+    if (minPrice != null && maxPrice != null && product.productPrice >= minPrice && product.productPrice <= maxPrice)
         matchingFields++;
     if (distance != null) {
-        getDistanceByCompanyId(product.companyId, latitude, longitude)
-        .then(productDistance => {
-            if(productDistance != null && productDistance <= distance) {
-                matchingFields++;
-            }
-            console.log(matchingFields);
-        })
-        .catch();
-        console.log(matchingFields);
+        let productDistance = await getDistanceByCompanyId(product.companyId, latitude, longitude)
+        if(productDistance != null && productDistance <= distance) {
+            matchingFields++;
+        }
     }
-    return {
+    return { // returns a new object that holds the product and the amount of matching fields.
         product: product,
         match: matchingFields
     };
-    
-
 }
 
 router.post('/get_filtered_products', Auth, async(request, response) => {
-    const {gender, related, events, 
-        interests, age, price, 
-        latitude, longitude, distance} = request.body;
-    let eventsId = await categoriesIdByNames(events)
-    let interestsId = await categoriesIdByNames(interests)
-    Product.find({$or: [
-        {gender: gender}, 
-        {related: related},
-        {categoriesId:{$elemMatch:{$in:eventsId}}}, // Event is a category
-        {categoriesId:{$elemMatch:{$in:interestsId}}}, // Interest is a category
-        {$and: [{minAge: {$lte: age}}, {maxAge: {$gte: age}}]},
-    ]})
-    .then(products => {
+    try{
+        const {gender, related, event, 
+            interests, age, minPrice, maxPrice, 
+            latitude, longitude, distance} = request.body;
+        let eventId = await singleCategoryIdByName(event)
+        let interestsId = await categoriesIdByNames(interests)
+        const products = await Product.find({$or: [
+            {gender: gender}, 
+            {related: related},
+            {categoriesId:{$elemMatch: {eventId}}}, // Event is a category
+            {categoriesId:{$elemMatch:{$in:interestsId}}}, // Interest is a category
+            {$and: [{minAge: {$lte: age}}, {maxAge: {$gte: age}}]},
+        ]})
         let maxMatchingFields = 0;
-        const matchingProducts = products.map(product => {
-            let matchProduct = getProductWithMatchingValue(product, gender, related, eventsId, interestsId, age, price, latitude, longitude, distance);
-            if (matchProduct.match > maxMatchingFields)
+        const matchingProducts = [];
+        for (let product of products) {
+            let matchProduct = await getProductWithMatchingValue(product, gender, related, eventId, interestsId, age, minPrice, maxPrice, latitude, longitude, distance);
+            if (matchProduct.match >= maxMatchingFields) {
                 maxMatchingFields = matchProduct.match;
-            return matchProduct;
-        }).filter(matchProduct => matchProduct.match == maxMatchingFields);
+                matchingProducts.push(matchProduct)
+            }
+        }
         return response.status(200).json({
             message: matchingProducts
+                .filter(productWithMatch => productWithMatch.match == maxMatchingFields)
+                .map(productWithMatch => productWithMatch.product)
         });
-    })
-    .catch(error => response.status(500).json({
-        message: error.message
-    }));
+    }
+    catch(error) { 
+        return response.status(500).json({
+            message: error.message
+        });
+    }
 })
 
 /**
@@ -290,6 +297,17 @@ async function categoriesIdByNames(names) {
     return Category.find({ categoryName: { $in: names} })
         .then(categories => categories.map(category => category._id))
         .catch(error => []);
+}
+
+async function singleCategoryIdByName(name) {
+    return Category.findOne({categoryName: name})
+        .then(category => {
+            if (category != null) {
+                return category._id;
+            }
+            return null;
+        })
+        .catch(error => null)
 }
 
 export default router;
