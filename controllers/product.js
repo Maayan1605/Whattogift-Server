@@ -8,6 +8,71 @@ import { getDistance } from "geolib";
 import { getDistanceByCompanyId } from "./company.js";
 const router = express.Router();
 
+/**
+ * @swagger
+ * definitions:
+ *  Product:
+ *      type: object
+ *      properties:
+ *          companyId:
+ *              type: string
+ *          categoryId:
+ *              type: string
+ *          brandId:
+ *              type: string
+ *          productName:
+ *              type: string
+ *          productImage:
+ *              type: string
+ *          productPrice:
+ *              type: integer
+ *          productDescription:
+ *              type: string
+ *          unitInStock:
+ *              type: integer
+ *          gender:
+ *              type: string
+ *          related:
+ *              type: integer
+ *          minAge:
+ *              type: integer
+ *          maxAge:
+ *              type: integer
+ *          interests:
+ *              type: array
+ *              items:
+ *                  type: string
+ *          events:
+ *              type: array
+ *              items:
+ *                  type: string
+ *  FilteredGift:
+ *      type: object
+ *      properties:
+ *          gender:
+ *              type: string
+ *          related:
+ *              type: integer
+ *          age:
+ *              type: integer
+ *          minPrice:
+ *              type: integer
+ *          maxPrice:
+ *              type: integer
+ *          interests:
+ *              type: array
+ *              items:
+ *                  type: string
+ *          events:
+ *              type: array
+ *              items:
+ *                  type: string
+ *          longitude:
+ *              type: number
+ *          latitude:
+ *              type: number
+ *          
+ */
 
 /**
  * @swagger
@@ -137,12 +202,32 @@ router.get('/get_all_products', Auth, async(request, response) => {
     })
 })
 
+/**
+ * @swagger
+ * /api/product/create_product:
+ *  post:
+ *      summary: Create new product
+ *      tags: [Products]
+ *      description: Use this endpoint to create a new account
+ *      requestBody:
+ *          content:
+ *              application/json:
+ *                  schema:
+ *                      $ref: '#/definitions/Product'
+ *      responses:
+ *          200:
+ *              discription: Success 
+ *          500:
+ *              discription: Error 
+ */
 router.post('/create_product', Auth, async(request, response) => {
     const id = mongoose.Types.ObjectId();
     const {
-        companyId,categoriesId,brandId,
+        companyId,categoryId,brandId,
         productName,productPrice,productDescription,
-        unitInStock, productImage, minAge, maxAge, related, gender
+        unitInStock, productImage, minAge, 
+        maxAge, related, gender,
+        interests, events
     } = request.body;
     Product.findOne({productName: productName, companyId: companyId, brandId: brandId})
     .then(product => {
@@ -154,7 +239,7 @@ router.post('/create_product', Auth, async(request, response) => {
         Product.create({
             _id: id,
             companyId: companyId,
-            categoriesId: categoriesId,
+            categoryId: categoryId,
             brandId: brandId,
             productName: productName,
             productDescription: productDescription,
@@ -165,6 +250,8 @@ router.post('/create_product', Auth, async(request, response) => {
             maxAge: maxAge,
             gender: gender,
             related: related,
+            interests: interests,
+            events: events,
             reviews: []
         })
         .then(createdProduct => response.status(200).json({
@@ -176,15 +263,15 @@ router.post('/create_product', Auth, async(request, response) => {
     }));
 })
 
-async function getProductWithMatchingValue(product, gender, related, eventId, interests, age, minPrice, maxPrice, latitude, longitude, distance) {
+async function getProductWithMatchingValue(product, gender, related, events, interests, age, minPrice, maxPrice, latitude, longitude, distance) {
     let matchingFields = 0;
     if (product.gender == gender)
         matchingFields++;
     if (related != null && product.related == related)
         matchingFields++;
-    if (product.categoriesId.find(categoryId => categoryId.equals(eventId))) 
+    if (product.events.find(event => events.includes(event))) 
         matchingFields++;
-    if (product.categoriesId.find(categoryId => interests.find(interestId => categoryId.equals(interestId)))) 
+    if (product.interests.find(interest => interests.includes(interest))) 
         matchingFields++;
     if (product.minAge <= age && product.maxAge >= age)
         matchingFields++;
@@ -202,24 +289,40 @@ async function getProductWithMatchingValue(product, gender, related, eventId, in
     };
 }
 
+/**
+ * @swagger
+ * /api/product/get_filtered_products:
+ *  post:
+ *      summary: Create new product
+ *      tags: [Products]
+ *      description: Use this endpoint to create a new account
+ *      requestBody:
+ *          content:
+ *              application/json:
+ *                  schema:
+ *                      $ref: '#/definitions/FilteredGift'
+ *      responses:
+ *          200:
+ *              discription: Success 
+ *          500:
+ *              discription: Error 
+ */
 router.post('/get_filtered_products', Auth, async(request, response) => {
     try{
-        const {gender, related, event, 
+        const {gender, related, events, 
             interests, age, minPrice, maxPrice, 
             latitude, longitude, distance} = request.body;
-        let eventId = await singleCategoryIdByName(event)
-        let interestsId = await categoriesIdByNames(interests)
         const products = await Product.find({$or: [
             {gender: gender}, 
             {related: related},
-            {categoriesId:{$elemMatch: {eventId}}}, // Event is a category
-            {categoriesId:{$elemMatch:{$in:interestsId}}}, // Interest is a category
+            {events:{$elemMatch:{$in:events}}}, // Event is a category
+            {interests:{$elemMatch:{$in:interests}}}, // Interest is a category
             {$and: [{minAge: {$lte: age}}, {maxAge: {$gte: age}}]},
         ]})
         let maxMatchingFields = 0;
         const matchingProducts = [];
         for (let product of products) {
-            let matchProduct = await getProductWithMatchingValue(product, gender, related, eventId, interestsId, age, minPrice, maxPrice, latitude, longitude, distance);
+            let matchProduct = await getProductWithMatchingValue(product, gender, related, events, interests, age, minPrice, maxPrice, latitude, longitude, distance);
             if (matchProduct.match >= maxMatchingFields) {
                 maxMatchingFields = matchProduct.match;
                 matchingProducts.push(matchProduct)
